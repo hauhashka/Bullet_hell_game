@@ -1,5 +1,7 @@
-import pygame
 import os
+import sys
+
+import pygame
 
 
 def load_image(name, colorkey=None):
@@ -13,9 +15,8 @@ def load_image(name, colorkey=None):
 
 
 class Background(pygame.sprite.Sprite):
-    girl = load_image('girl_2.jpg')
+    girl = load_image('girl_1.1.jpg')
     girl = pygame.transform.scale(girl, (600, 900))
-
 
     def __init__(self, *group):
         super().__init__(*group)
@@ -27,7 +28,6 @@ class Background(pygame.sprite.Sprite):
 
 all_sprites = pygame.sprite.Group()
 boackground = Background(all_sprites)
-
 
 if __name__ == '__main__':
     pygame.init()
@@ -47,4 +47,3 @@ if __name__ == '__main__':
         all_sprites.draw(screen)
         clock.tick(fps)
         ticks += 1
-
