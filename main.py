@@ -6,8 +6,8 @@ import pygame
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
+
 pygame.init()
-MainMenuSprites = pygame.sprite.Group()
 level1_available = True
 level2_available = False
 level3_available = False
@@ -51,18 +51,6 @@ def load_image(name, colorkey=None):
         screen.blit(label, (label_x, label_y))'''
 
 
-def start_screen():
-    btn1 = ButtonLevel1(all_sprites)
-    btn2 = ButtonLevel2(all_sprites)
-    btn3 = ButtonLevel3(all_sprites)
-
-
-def load_level():
-    for sprite in MainMenuSprites:
-        sprite.kill()
-        screen.fill((0, 0, 0))
-
-
 class ButtonLevel1(pygame.sprite.Sprite):
     if level1_available:
         image = load_image('lv1_en.png')
@@ -75,7 +63,7 @@ class ButtonLevel1(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 90
         self.rect.y = 350
-        MainMenuSprites.add(self)
+        self.pos = (200, 100)
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
@@ -95,7 +83,7 @@ class ButtonLevel2(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 90
         self.rect.y = 450
-        MainMenuSprites.add(self)
+        self.pos = (200, 100)
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
@@ -115,7 +103,7 @@ class ButtonLevel3(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 90
         self.rect.y = 550
-        MainMenuSprites.add(self)
+        self.pos = (200, 100)
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
@@ -133,7 +121,7 @@ class Background(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 300
         self.rect.y = 0
-        MainMenuSprites.add(self)
+        self.pos = (0, 0)
 
 
 class Logo(pygame.sprite.Sprite):
@@ -145,13 +133,44 @@ class Logo(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 250
         self.rect.y = -50
-        MainMenuSprites.add(self)
+
+
+def load_level():
+    for sprite in all_sprites:
+        sprite.kill()
+    girl = Girl(all_sprites)
+
+
+class Girl(pygame.sprite.Sprite):
+    girl_stands = load_image('girl_idle.png')
+    girl_hurt = load_image('girl_hurt.png')
+    girl_walks = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = Girl.girl_stands
+        self.rect = self.image.get_rect().move(400, 500)
+        self.pos = (400, 250)
+        self.hp = 3
+
+    def hurt(self):
+        self.image = Girl.girl_hurt
+
+    def update(self, *event):
+        pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0) if self.hp > 0 else pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 1)
+
+
+
+
+
 
 
 all_sprites = pygame.sprite.Group()
-boackground = Background(all_sprites)
+background = Background(all_sprites)
 logo = Logo(all_sprites)
-start_screen()
+btn1 = ButtonLevel1(all_sprites)
+btn2 = ButtonLevel2(all_sprites)
+btn3 = ButtonLevel3(all_sprites)
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
@@ -166,7 +185,9 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
             all_sprites.update(event)
-        pygame.display.flip()
+        screen.fill((28, 28, 28))
+        all_sprites.update()
         all_sprites.draw(screen)
+        pygame.display.flip()
         clock.tick(fps)
         ticks += 1
