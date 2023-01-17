@@ -144,21 +144,42 @@ def load_level():
 class Girl(pygame.sprite.Sprite):
     girl_stands = load_image('girl_idle.png')
     girl_hurt = load_image('girl_hurt.png')
-    girl_walks = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
+    girl_walk_1 = load_image('girl_walk_1.png')
+    girl_walk_2 = load_image('girl_walk_2.png')
 
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Girl.girl_stands
+        self.speed = 20
         self.rect = self.image.get_rect().move(400, 500)
-        self.pos = (400, 250)
+        self.x = 400
+        self.y = 500
         self.hp = 3
+        self.walk = 0
 
     def hurt(self):
         self.image = Girl.girl_hurt
 
     def update(self, *event):
-        pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0) if self.hp > 0 else pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 1)
-
+        if self.hp > 0:
+            pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0)
+        if self.hp > 1:
+            pygame.draw.rect(screen, (255, 0, 0), (85, 20, 30, 30), 0)
+        if self.hp > 2:
+            pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
+        if event and event[0].type == pygame.KEYDOWN:
+            if event[0].key == pygame.K_LEFT:
+                self.rect = self.image.get_rect().move(self.x - self.speed, self.y)
+                self.x -= self.speed
+            if event[0].key == pygame.K_RIGHT:
+                self.rect = self.image.get_rect().move(self.x + self.speed, self.y)
+                self.x += self.speed
+            if event[0].key == pygame.K_UP:
+                self.rect = self.image.get_rect().move(self.x, self.y - self.speed)
+                self.y -= self.speed
+            if event[0].key == pygame.K_DOWN:
+                self.rect = self.image.get_rect().move(self.x, self.y + self.speed)
+                self.y += self.speed
 
 
 
