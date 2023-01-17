@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 
 import pygame
@@ -6,13 +7,16 @@ import pygame
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
-
 pygame.init()
 level1_available = True
 level2_available = False
 level3_available = False
 
+level_map = []
 
+SKELETON_SPAWN = pygame.USEREVENT + 1
+
+bad_guys = pygame.sprite.Group
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     # если файл не существует, то выходим
@@ -68,7 +72,7 @@ class ButtonLevel1(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and level1_available:
-            load_level()
+            load_level(1)
 
 
 class ButtonLevel2(pygame.sprite.Sprite):
@@ -88,7 +92,7 @@ class ButtonLevel2(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and level2_available:
-            load_level()
+            load_level(2)
 
 
 class ButtonLevel3(pygame.sprite.Sprite):
@@ -108,7 +112,7 @@ class ButtonLevel3(pygame.sprite.Sprite):
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and level3_available:
-            load_level()
+            load_level(3)
 
 
 class Background(pygame.sprite.Sprite):
@@ -135,63 +139,72 @@ class Logo(pygame.sprite.Sprite):
         self.rect.y = -50
 
 
-def load_level():
+def load_level(level_number):
+    global level_map
+    level_map = []
     for sprite in all_sprites:
         sprite.kill()
     girl = Girl(all_sprites)
+    with open(f'data/level{level_number}.txt', 'r') as level:
+        level_map = [line.strip() for line in level]
+        print(level_map)
 
 
 class Girl(pygame.sprite.Sprite):
     girl_stands = load_image('girl_idle.png')
     girl_hurt = load_image('girl_hurt.png')
-    girl_walk_1 = load_image('girl_walk_1.png')
-    girl_walk_2 = load_image('girl_walk_2.png')
+    girl_walks = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
 
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Girl.girl_stands
-        self.speed = 20
         self.rect = self.image.get_rect().move(400, 500)
-        self.x = 400
-        self.y = 500
+        self.pos = (400, 250)
         self.hp = 3
-        self.walk = 0
 
     def hurt(self):
         self.image = Girl.girl_hurt
 
     def update(self, *event):
-        if self.hp > 0:
-            pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0)
-        if self.hp > 1:
-            pygame.draw.rect(screen, (255, 0, 0), (85, 20, 30, 30), 0)
-        if self.hp > 2:
-            pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
-        if event and event[0].type == pygame.KEYDOWN:
-            if event[0].key == pygame.K_LEFT:
-                self.rect = self.image.get_rect().move(self.x - self.speed, self.y)
-                self.x -= self.speed
-            if event[0].key == pygame.K_RIGHT:
-                self.rect = self.image.get_rect().move(self.x + self.speed, self.y)
-                self.x += self.speed
-            if event[0].key == pygame.K_UP:
-                self.rect = self.image.get_rect().move(self.x, self.y - self.speed)
-                self.y -= self.speed
-            if event[0].key == pygame.K_DOWN:
-                self.rect = self.image.get_rect().move(self.x, self.y + self.speed)
-                self.y += self.speed
+        pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0) if self.hp > 0 \
+            else pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 1)
 
 
+class Skeleton(pygame.sprite.Sprite):
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.pos = (random.randint(320, 880), 20)
+
+    def hurt(self):
+        self.kill()
 
 
+class BasedSkeleton(Skeleton):
+    sk_image = load_image('skeleton.png')
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.pos = (random.randint(320, 880), 20)
+        self.image = BasedSkeleton.sk_image
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        self.rect.y -= 5
 
 
+def read_skeleton(line):
+    for elem in line:
+        if elem == '.':
+            sk = BasedSkeleton()
+        elif elem == '#':
+            pass
 all_sprites = pygame.sprite.Group()
 background = Background(all_sprites)
 logo = Logo(all_sprites)
 btn1 = ButtonLevel1(all_sprites)
 btn2 = ButtonLevel2(all_sprites)
 btn3 = ButtonLevel3(all_sprites)
+pygame.time.set_timer(SKELETON_SPAWN, random.randint(1000, 4000))
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
@@ -201,10 +214,14 @@ if __name__ == '__main__':
     running = True
     ticks = 0
     speed = 10
+    spawnlane_index = 0
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == SKELETON_SPAWN:
+                read_skeleton(level_map[spawnlane_index])
+                spawnlane_index += 1
             all_sprites.update(event)
         screen.fill((28, 28, 28))
         all_sprites.update()
