@@ -17,6 +17,8 @@ level_map = []
 SKELETON_SPAWN = pygame.USEREVENT + 1
 
 bad_guys = pygame.sprite.Group
+
+
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
     # если файл не существует, то выходим
@@ -190,6 +192,7 @@ class Girl(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect().move(self.x, self.y + self.speed)
                 self.y += self.speed
 
+
 class Skeleton(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
@@ -204,20 +207,24 @@ class BasedSkeleton(Skeleton):
 
     def __init__(self, *group):
         super().__init__(*group)
-        self.pos = (random.randint(320, 880), 20)
         self.image = BasedSkeleton.sk_image
-        self.rect = self.image.get_rect()
+        self.rect = self.image.get_rect().move((random.randint(0, 680), -200))
+        bad_guys.add(self)
 
-    def update(self):
-        self.rect.y -= 5
+    def update(self, *event):
+        self.rect.y += 1
 
 
 def read_skeleton(line):
+    print(line)
     for elem in line:
+        print(elem)
         if elem == '.':
-            sk = BasedSkeleton()
+            sk = BasedSkeleton(all_sprites)
         elif elem == '#':
             pass
+
+
 all_sprites = pygame.sprite.Group()
 background = Background(all_sprites)
 logo = Logo(all_sprites)
