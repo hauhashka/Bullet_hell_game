@@ -181,9 +181,9 @@ class BasedSkeleton(Skeleton):
         super().__init__(*group)
         self.image = BasedSkeleton.sk_image
         self.rect = self.image.get_rect()
-        self.rect.move((random.randint(0, 680), 0))
+        self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
-            self.rect.x = random.randrange(0, 680)
+            self.rect.x = random.randrange(200, 1000)
         bad_guys.add(self)
 
     def update(self, *event):
@@ -206,7 +206,7 @@ logo = Logo(all_sprites)
 btn1 = ButtonLevel1(all_sprites)
 btn2 = ButtonLevel2(all_sprites)
 btn3 = ButtonLevel3(all_sprites)
-pygame.time.set_timer(SKELETON_SPAWN, random.randint(1000, 4000))
+pygame.time.set_timer(SKELETON_SPAWN, random.randint(1500, 7000))
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     running = True
     ticks = 0
-    speed = 10
+    speed = 7
     spawnlane_index = 0
     while running:
         for event in pygame.event.get():
