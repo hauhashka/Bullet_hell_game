@@ -13,7 +13,7 @@ level2_available = False
 level3_available = False
 pygame.mixer.music.load("data/main_menu_theme.mp3")
 level_map = []
-pygame.mixer.music.play(-1, 0.0, 1000)
+pygame.mixer.music.play(-1, 0.0)
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 
@@ -192,6 +192,29 @@ class BasedSkeleton(Skeleton):
         self.rect.y += 1
 
 
+class MusicButton(pygame.sprite.Sprite):
+    img_on = load_image('mbutton_on.png')
+    img_off = load_image('mbutton_off.png')
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = MusicButton.img_on
+        self.rect = self.image.get_rect().move(1100, 800)
+        self.is_playing = True
+
+    def update(self, *args):
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
+                self.rect.collidepoint(args[0].pos) and self.is_playing:
+            pygame.mixer.music.pause()
+            self.image = MusicButton.img_off
+            self.is_playing = False
+        elif args and args[0].type == pygame.MOUSEBUTTONDOWN and \
+                self.rect.collidepoint(args[0].pos) and not self.is_playing:
+            pygame.mixer.music.unpause()
+            self.image = MusicButton.img_on
+            self.is_playing = True
+
+
 def read_skeleton(line):
     print(line)
     for elem in line:
@@ -208,7 +231,7 @@ logo = Logo(all_sprites)
 btn1 = ButtonLevel1(all_sprites)
 btn2 = ButtonLevel2(all_sprites)
 btn3 = ButtonLevel3(all_sprites)
-
+btnm = MusicButton(all_sprites)
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
