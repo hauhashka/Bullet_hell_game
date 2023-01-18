@@ -11,9 +11,9 @@ pygame.init()
 level1_available = True
 level2_available = False
 level3_available = False
-
+pygame.mixer.music.load("data/main_menu_theme.mp3")
 level_map = []
-
+pygame.mixer.music.play(-1, 0.0, 1000)
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 
@@ -117,6 +117,8 @@ class Logo(pygame.sprite.Sprite):
 def load_level(level_number):
     global level_map
     global girl
+    pygame.time.set_timer(SKELETON_SPAWN, random.randint(1500, 7000))
+    pygame.mixer.music.stop()
     level_map = []
     for sprite in all_sprites:
         sprite.kill()
@@ -206,7 +208,7 @@ logo = Logo(all_sprites)
 btn1 = ButtonLevel1(all_sprites)
 btn2 = ButtonLevel2(all_sprites)
 btn3 = ButtonLevel3(all_sprites)
-pygame.time.set_timer(SKELETON_SPAWN, random.randint(1500, 7000))
+
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
