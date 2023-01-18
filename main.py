@@ -15,6 +15,8 @@ level3_available = False
 level_map = []
 
 SKELETON_SPAWN = pygame.USEREVENT + 1
+girl_frame_change = pygame.USEREVENT + 2
+
 
 bad_guys = pygame.sprite.Group
 
@@ -27,34 +29,6 @@ def load_image(name, colorkey=None):
         sys.exit()
     image = pygame.image.load(fullname)
     return image
-
-
-'''def draw_button(y_shift, text, enabled=False):
-    if enabled:
-        color = pygame.Color(50, 150, 50)
-        # рисуем "тень"
-        pygame.draw.rect(screen, color,
-                         (90, 400 + y_shift, 200, 70), 0)
-        hsv = color.hsva
-        # увеличиваем параметр Value, который влияет на яркость
-        color.hsva = (hsv[0], hsv[1], hsv[2] + 30, hsv[3])
-        # рисуем сам объект
-        pygame.draw.rect(screen, color, (80, 390 + y_shift, 200, 70), 0)
-        font = pygame.font.Font(None, 50)
-        label = font.render(text, True, (28, 28, 28))
-        label_x = 90
-        label_y = 400 + y_shift
-        screen.blit(label, (label_x, label_y))
-    else:
-        color = pygame.Color(50, 150, 50)
-        # рисуем "тень"
-        pygame.draw.rect(screen, color,
-                         (90, 400 + y_shift, 200, 70), 0)
-        font = pygame.font.Font(None, 50)
-        label = font.render(text, True, (30, 30, 30))
-        label_x = 100
-        label_y = 410 + y_shift
-        screen.blit(label, (label_x, label_y))'''
 
 
 class ButtonLevel1(pygame.sprite.Sprite):
@@ -143,10 +117,12 @@ class Logo(pygame.sprite.Sprite):
 
 def load_level(level_number):
     global level_map
+    global girl
     level_map = []
     for sprite in all_sprites:
         sprite.kill()
     girl = Girl(all_sprites)
+    pygame.time.set_timer(girl_frame_change, 500)
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
         print(level_map)
@@ -155,42 +131,40 @@ def load_level(level_number):
 class Girl(pygame.sprite.Sprite):
     girl_stands = load_image('girl_idle.png')
     girl_hurt = load_image('girl_hurt.png')
-    girl_walk_1 = load_image('girl_walk_1.png')
-    girl_walk_2 = load_image('girl_walk_2.png')
+    girl_walk = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
 
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Girl.girl_stands
-        self.speed = 20
+        self.speed = 10
         self.rect = self.image.get_rect().move(400, 500)
-        self.x = 400
-        self.y = 500
+        self.movex = 0
+        self.movey = 0
         self.hp = 3
-        self.walk = 0
+        self.frame = 0
 
     def hurt(self):
         self.image = Girl.girl_hurt
 
-    def update(self, *event):
+    def move(self, x, y):
+        self.movex += x
+        self.movey += y
+
+    def update(self, *args):
         if self.hp > 0:
             pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0)
         if self.hp > 1:
             pygame.draw.rect(screen, (255, 0, 0), (85, 20, 30, 30), 0)
         if self.hp > 2:
             pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
-        if event and event[0].type == pygame.KEYDOWN:
-            if event[0].key == pygame.K_LEFT:
-                self.rect = self.image.get_rect().move(self.x - self.speed, self.y)
-                self.x -= self.speed
-            if event[0].key == pygame.K_RIGHT:
-                self.rect = self.image.get_rect().move(self.x + self.speed, self.y)
-                self.x += self.speed
-            if event[0].key == pygame.K_UP:
-                self.rect = self.image.get_rect().move(self.x, self.y - self.speed)
-                self.y -= self.speed
-            if event[0].key == pygame.K_DOWN:
-                self.rect = self.image.get_rect().move(self.x, self.y + self.speed)
-                self.y += self.speed
+        self.rect.x += self.movex
+        self.rect.y += self.movey
+
+    def change_frame(self):
+        self.frame += 1
+        if self.frame > 1:
+            self.frame = 0
+        self.image = Girl.girl_walk[self.frame]
 
 
 class Skeleton(pygame.sprite.Sprite):
@@ -210,6 +184,7 @@ class BasedSkeleton(Skeleton):
         self.image = BasedSkeleton.sk_image
         self.rect = self.image.get_rect().move((random.randint(0, 680), -200))
         bad_guys.add(self)
+
 
     def update(self, *event):
         self.rect.y += 1
@@ -236,7 +211,7 @@ if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
 
-    fps = 50  # количество кадров в секунду
+    fps = 60  # количество кадров в секунду
     clock = pygame.time.Clock()
     running = True
     ticks = 0
@@ -249,6 +224,26 @@ if __name__ == '__main__':
             if event.type == SKELETON_SPAWN:
                 read_skeleton(level_map[spawnlane_index])
                 spawnlane_index += 1
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    girl.move(-speed, 0)
+                if event.key == pygame.K_RIGHT:
+                    girl.move(speed, 0)
+                if event.key == pygame.K_UP:
+                    girl.move(0, -speed)
+                if event.key == pygame.K_DOWN:
+                    girl.move(0, speed)
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT:
+                    girl.move(speed, 0)
+                if event.key == pygame.K_RIGHT:
+                    girl.move(-speed, 0)
+                if event.key == pygame.K_UP:
+                    girl.move(0, speed)
+                if event.key == pygame.K_DOWN:
+                    girl.move(0, -speed)
+            if event.type == girl_frame_change:
+                girl.change_frame()
             all_sprites.update(event)
         screen.fill((28, 28, 28))
         all_sprites.update()
