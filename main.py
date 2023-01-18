@@ -17,8 +17,7 @@ level_map = []
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 
-
-bad_guys = pygame.sprite.Group
+bad_guys = pygame.sprite.Group()
 
 
 def load_image(name, colorkey=None):
@@ -170,7 +169,6 @@ class Girl(pygame.sprite.Sprite):
 class Skeleton(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
-        self.pos = (random.randint(320, 880), 20)
 
     def hurt(self):
         self.kill()
@@ -182,9 +180,11 @@ class BasedSkeleton(Skeleton):
     def __init__(self, *group):
         super().__init__(*group)
         self.image = BasedSkeleton.sk_image
-        self.rect = self.image.get_rect().move((random.randint(0, 680), -200))
+        self.rect = self.image.get_rect()
+        self.rect.move((random.randint(0, 680), 0))
+        while pygame.sprite.spritecollide(self, bad_guys, False):
+            self.rect.x = random.randrange(0, 680)
         bad_guys.add(self)
-
 
     def update(self, *event):
         self.rect.y += 1
