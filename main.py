@@ -4,6 +4,7 @@ import sys
 
 import pygame
 
+import time
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
@@ -16,6 +17,7 @@ level_map = []
 pygame.mixer.music.play(-1, 0.0)
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
+girl_hit = pygame.USEREVENT + 3
 
 bad_guys = pygame.sprite.Group()
 
@@ -128,6 +130,7 @@ def load_level(level_number):
     Border(200)
     Border(1000)
     pygame.time.set_timer(girl_frame_change, 500)
+    pygame.time.set_timer(girl_hit, 200)
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
         print(level_map)
@@ -149,11 +152,16 @@ class Girl(pygame.sprite.Sprite):
         self.frame = 0
         self.cooldown = 400
         self.last = pygame.time.get_ticks()
+        self.last_hurt = pygame.time.get_ticks()
+        self.cooldown_hurt = 700
 
-    def hurt(self):
-        self.hp -= 1
-        self.image = Girl.girl_hurt
-        pygame.time.wait(500)
+    def hit(self):
+        now = pygame.time.get_ticks()
+        if pygame.sprite.spritecollideany(self, bad_guys):
+            if now - self.last_hurt >= self.cooldown_hurt:
+                self.last_hurt = now
+                self.hp -= 1
+                self.image = Girl.girl_hurt
 
     def shoot(self):
         now = pygame.time.get_ticks()
@@ -177,8 +185,6 @@ class Girl(pygame.sprite.Sprite):
             self.rect.x += self.movex
         if -50 < self.rect.y + self.movey < 850:
             self.rect.y += self.movey
-        if pygame.sprite.spritecollideany(self, bad_guys):
-            self.hurt()
 
     def change_frame(self):
         self.frame += 1
@@ -325,6 +331,8 @@ if __name__ == '__main__':
                     girl.move(0, -speed)
             if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
+            if event.type == girl_hit and IN_GAME:
+                girl.hit()
             all_sprites.update(event)
         screen.fill((28, 28, 28))
         all_sprites.update()
