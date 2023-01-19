@@ -187,8 +187,8 @@ class BulletGirl(pygame.sprite.Sprite):
         self.add(bullets_girl)
         self.rect = self.image.get_rect()
         self.rect.x = girl.rect.x
-        self.rect.y = girl.rect.y - 50
-        self.vel = 40
+        self.rect.y = girl.rect.y
+        self.vel = 5
 
     def update(self, *args):
         self.rect.y -= self.vel
