@@ -4,6 +4,7 @@ import sys
 
 import pygame
 
+import time
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
@@ -121,7 +122,7 @@ def load_level(level_number):
     IN_GAME = True
     for sprite in all_sprites:
         sprite.kill()
-    pygame.time.set_timer(SKELETON_SPAWN, random.randint(1500, 7000))
+    pygame.time.set_timer(SKELETON_SPAWN, 2000)
     pygame.mixer.music.stop()
     level_map = []
     girl = Girl(all_sprites)
@@ -142,17 +143,22 @@ class Girl(pygame.sprite.Sprite):
         super().__init__(*group)
         self.image = Girl.girl_stands
         self.speed = 10
-        self.rect = self.image.get_rect().move(400, 500)
+        self.rect = self.image.get_rect().move(570, 700)
         self.movex = 0
         self.movey = 0
         self.hp = 3
         self.frame = 0
+        self.cooldown = 400
+        self.last = pygame.time.get_ticks()
 
     def hurt(self):
         self.image = Girl.girl_hurt
 
     def shoot(self):
-        bullet = BulletGirl(all_sprites)
+        now = pygame.time.get_ticks()
+        if now - self.last >= self.cooldown:
+            self.last = now
+            bullet = BulletGirl(all_sprites)
         print(1)
 
     def move(self, x, y):
@@ -166,9 +172,9 @@ class Girl(pygame.sprite.Sprite):
             pygame.draw.rect(screen, (255, 0, 0), (85, 20, 30, 30), 0)
         if self.hp > 2:
             pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
-        if 55 < self.rect.x + self.movex < 760:
+        if 200 < self.rect.x + self.movex < 910:
             self.rect.x += self.movex
-        if -200 < self.rect.y + self.movey < 700:
+        if -50 < self.rect.y + self.movey < 850:
             self.rect.y += self.movey
 
     def change_frame(self):
@@ -186,15 +192,17 @@ class BulletGirl(pygame.sprite.Sprite):
         self.image = BulletGirl.tile
         self.add(bullets_girl)
         self.rect = self.image.get_rect()
-        self.rect.x = girl.rect.x
+        self.rect.x = girl.rect.x + 40
         self.rect.y = girl.rect.y
         self.vel = 5
 
     def update(self, *args):
         self.rect.y -= self.vel
-        print(self.rect.y, girl.rect.y)
         if self.rect.y < -50:
             self.kill()
+        # if pygame.sprite.spritecollideany(self, bad_guys):
+        #     pygame.time.wait(10)
+        #     self.kill()
 
 
 class Skeleton(pygame.sprite.Sprite):
@@ -219,6 +227,8 @@ class BasedSkeleton(Skeleton):
 
     def update(self, *event):
         self.rect.y += 1
+        if pygame.sprite.spritecollideany(self, bullets_girl):
+            self.kill()
 
 
 class MusicButton(pygame.sprite.Sprite):
