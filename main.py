@@ -4,7 +4,6 @@ import sys
 
 import pygame
 
-import time
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
@@ -152,7 +151,9 @@ class Girl(pygame.sprite.Sprite):
         self.last = pygame.time.get_ticks()
 
     def hurt(self):
+        self.hp -= 1
         self.image = Girl.girl_hurt
+        pygame.time.wait(500)
 
     def shoot(self):
         now = pygame.time.get_ticks()
@@ -176,6 +177,8 @@ class Girl(pygame.sprite.Sprite):
             self.rect.x += self.movex
         if -50 < self.rect.y + self.movey < 850:
             self.rect.y += self.movey
+        if pygame.sprite.spritecollideany(self, bad_guys):
+            self.hurt()
 
     def change_frame(self):
         self.frame += 1
@@ -200,9 +203,8 @@ class BulletGirl(pygame.sprite.Sprite):
         self.rect.y -= self.vel
         if self.rect.y < -50:
             self.kill()
-        # if pygame.sprite.spritecollideany(self, bad_guys):
-        #     pygame.time.wait(10)
-        #     self.kill()
+        if pygame.sprite.spritecollideany(self, bad_guys):
+            self.kill()
 
 
 class Skeleton(pygame.sprite.Sprite):
