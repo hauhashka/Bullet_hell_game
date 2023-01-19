@@ -117,12 +117,16 @@ class Logo(pygame.sprite.Sprite):
 def load_level(level_number):
     global level_map
     global girl
+    global IN_GAME
+    IN_GAME = True
+    for sprite in all_sprites:
+        sprite.kill()
     pygame.time.set_timer(SKELETON_SPAWN, random.randint(1500, 7000))
     pygame.mixer.music.stop()
     level_map = []
-    for sprite in all_sprites:
-        sprite.kill()
     girl = Girl(all_sprites)
+    Border(200)
+    Border(1000)
     pygame.time.set_timer(girl_frame_change, 500)
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
@@ -147,6 +151,10 @@ class Girl(pygame.sprite.Sprite):
     def hurt(self):
         self.image = Girl.girl_hurt
 
+    def shoot(self):
+        bullet = BulletGirl(all_sprites)
+        print(1)
+
     def move(self, x, y):
         self.movex += x
         self.movey += y
@@ -158,14 +166,35 @@ class Girl(pygame.sprite.Sprite):
             pygame.draw.rect(screen, (255, 0, 0), (85, 20, 30, 30), 0)
         if self.hp > 2:
             pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
-        self.rect.x += self.movex
-        self.rect.y += self.movey
+        if 55 < self.rect.x + self.movex < 760:
+            self.rect.x += self.movex
+        if -200 < self.rect.y + self.movey < 700:
+            self.rect.y += self.movey
 
     def change_frame(self):
         self.frame += 1
         if self.frame > 1:
             self.frame = 0
         self.image = Girl.girl_walk[self.frame]
+
+
+class BulletGirl(pygame.sprite.Sprite):
+    tile = load_image('tile_girl.png')
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = BulletGirl.tile
+        self.add(bullets_girl)
+        self.rect = self.image.get_rect()
+        self.rect.x = girl.rect.x
+        self.rect.y = girl.rect.y - 50
+        self.vel = 40
+
+    def update(self, *args):
+        self.rect.y -= self.vel
+        print(self.rect.y, girl.rect.y)
+        if self.rect.y < -50:
+            self.kill()
 
 
 class Skeleton(pygame.sprite.Sprite):
@@ -215,6 +244,15 @@ class MusicButton(pygame.sprite.Sprite):
             self.is_playing = True
 
 
+class Border(pygame.sprite.Sprite):
+    def __init__(self, x1):
+        super().__init__(all_sprites)
+        self.add(borders)
+        self.image = pygame.Surface([10, 900])
+        self.image.fill((255, 255, 255))
+        self.rect = pygame.Rect(x1, 0, 1, 900)
+
+
 def read_skeleton(line):
     print(line)
     for elem in line:
@@ -232,6 +270,9 @@ btn1 = ButtonLevel1(all_sprites)
 btn2 = ButtonLevel2(all_sprites)
 btn3 = ButtonLevel3(all_sprites)
 btnm = MusicButton(all_sprites)
+borders = pygame.sprite.Group()
+bullets_girl = pygame.sprite.Group()
+bullets_skel = pygame.sprite.Group()
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('BulletHell')
@@ -242,14 +283,15 @@ if __name__ == '__main__':
     ticks = 0
     speed = 7
     spawnlane_index = 0
+    IN_GAME = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == SKELETON_SPAWN:
+            if event.type == SKELETON_SPAWN and IN_GAME:
                 read_skeleton(level_map[spawnlane_index])
                 spawnlane_index += 1
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.KEYDOWN and IN_GAME:
                 if event.key == pygame.K_LEFT:
                     girl.move(-speed, 0)
                 if event.key == pygame.K_RIGHT:
@@ -258,7 +300,9 @@ if __name__ == '__main__':
                     girl.move(0, -speed)
                 if event.key == pygame.K_DOWN:
                     girl.move(0, speed)
-            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_SPACE:
+                    girl.shoot()
+            if event.type == pygame.KEYUP and IN_GAME:
                 if event.key == pygame.K_LEFT:
                     girl.move(speed, 0)
                 if event.key == pygame.K_RIGHT:
@@ -267,7 +311,7 @@ if __name__ == '__main__':
                     girl.move(0, speed)
                 if event.key == pygame.K_DOWN:
                     girl.move(0, -speed)
-            if event.type == girl_frame_change:
+            if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
             all_sprites.update(event)
         screen.fill((28, 28, 28))
