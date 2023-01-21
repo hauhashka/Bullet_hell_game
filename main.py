@@ -289,7 +289,6 @@ class EndGameLabel(pygame.sprite.Sprite):
         self.rect = pygame.Rect(300, 600)
 
 
-
 def read_skeleton(line):
     print(line)
     for elem in line:
@@ -303,12 +302,11 @@ def read_skeleton(line):
 
 
 def end_game(level_passed):
+    IN_GAME = False
     cur = con.cursor()
     cur.execute('UPDATE WL'
                 'SET passed True'
                 f'WHERE level = {level_passed}')
-
-
 
 
 def lost():
@@ -384,7 +382,11 @@ if __name__ == '__main__':
                 running = False
             if event.type == SKELETON_SPAWN and IN_GAME:
                 read_skeleton(level_map[spawnlane_index])
-                spawnlane_index += 1
+                if spawnlane_index > len(level_map):
+                    spawnlane_index = 0
+                    IN_GAME = False
+                else:
+                    spawnlane_index += 1
             if event.type == pygame.KEYDOWN and IN_GAME:
                 if event.key == pygame.K_LEFT:
                     girl.move(-speed, 0)
