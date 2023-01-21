@@ -155,7 +155,6 @@ class Girl(pygame.sprite.Sprite):
         if now - self.last >= self.cooldown:
             self.last = now
             bullet = BulletGirl(all_sprites)
-        print(1)
 
     def move(self, x, y):
         self.movex += x
@@ -283,30 +282,33 @@ class EndGameLabel(pygame.sprite.Sprite):
         super().__init__(all_sprites)
         self.image = pygame.Surface([400, 500])
         self.font = pygame.font.Font(None, 300)
+        self.rect = pygame.Rect(300, 600, 500, 500)
+
+    def update(self, *args):
         text = self.font.render('Ты умничка <3', True, (0, 0, 0))
         self.image.fill((139, 0, 255))
         self.image.blit(text, (50, 100))
-        self.rect = pygame.Rect(300, 600)
 
 
 def read_skeleton(line):
-    print(line)
     for elem in line:
-        print(elem)
         if elem == '.':
             sk = BasedSkeleton(all_sprites)
-        elif elem == '*1':
+        elif elem == '1':
             end_game(1)
         elif elem == '#':
             pass
 
 
 def end_game(level_passed):
+    global IN_GAME
+    EndGameLabel()
     IN_GAME = False
     cur = con.cursor()
     cur.execute('UPDATE WL'
-                'SET passed True'
+                'SET passed = 1'
                 f'WHERE level = {level_passed}')
+    con.commit()
 
 
 def lost():
@@ -382,10 +384,11 @@ if __name__ == '__main__':
                 running = False
             if event.type == SKELETON_SPAWN and IN_GAME:
                 read_skeleton(level_map[spawnlane_index])
-                if spawnlane_index > len(level_map):
+                if spawnlane_index + 1 >= len(level_map):
                     spawnlane_index = 0
                     IN_GAME = False
                 else:
+                    print(level_map[spawnlane_index])
                     spawnlane_index += 1
             if event.type == pygame.KEYDOWN and IN_GAME:
                 if event.key == pygame.K_LEFT:
