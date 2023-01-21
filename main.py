@@ -12,9 +12,6 @@ pygame.init()
 level1_available = True
 level2_available = False
 level3_available = False
-pygame.mixer.music.load("data/main_menu_theme.mp3")
-level_map = []
-pygame.mixer.music.play(-1, 0.0)
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 girl_hit = pygame.USEREVENT + 3
@@ -58,7 +55,7 @@ class ButtonLevel1(pygame.sprite.Sprite):
 
 class ButtonLevel2(pygame.sprite.Sprite):
     cur = con.cursor()
-    level2_available = cur.execute('SELECT passed FROM wins&loses '
+    level2_available = cur.execute('SELECT passed FROM WL '
                                    'WHERE level like "1"')
     if level2_available:
         image = load_image('lv2_en.png')
@@ -81,7 +78,7 @@ class ButtonLevel2(pygame.sprite.Sprite):
 
 class ButtonLevel3(pygame.sprite.Sprite):
     cur = con.cursor()
-    level3_available = cur.execute('SELECT passed FROM wins&loses '
+    level3_available = cur.execute('SELECT passed FROM WL '
                                    'WHERE level like "2"')
     if level2_available:
         image = load_image('lv3_en.png')
@@ -126,24 +123,6 @@ class Logo(pygame.sprite.Sprite):
         self.rect.y = -50
 
 
-def load_level(level_number):
-    global level_map
-    global girl
-    global IN_GAME
-    IN_GAME = True
-    for sprite in all_sprites:
-        sprite.kill()
-    pygame.time.set_timer(SKELETON_SPAWN, 2000)
-    pygame.mixer.music.stop()
-    level_map = []
-    girl = Girl(all_sprites)
-    Border(200)
-    Border(1000)
-    pygame.time.set_timer(girl_frame_change, 500)
-    pygame.time.set_timer(girl_hit, 200)
-    with open(f'data/level{level_number}.txt', 'r') as level:
-        level_map = [line.strip() for line in level]
-        print(level_map)
 
 
 class Girl(pygame.sprite.Sprite):
@@ -219,8 +198,8 @@ class BulletGirl(pygame.sprite.Sprite):
         self.rect.y -= self.vel
         if self.rect.y < -50:
             self.kill()
-        if pygame.sprite.spritecollideany(self, bad_guys):
-            self.kill()
+        # if pygame.sprite.spritecollideany(self, bad_guys):
+        #     self.kill()
 
 
 class Skeleton(pygame.sprite.Sprite):
@@ -244,8 +223,12 @@ class BasedSkeleton(Skeleton):
         bad_guys.add(self)
 
     def update(self, *event):
+        global CNT
         self.rect.y += 1
         if pygame.sprite.spritecollideany(self, bullets_girl):
+            self.kill()
+            CNT += 1
+        if self.rect.y > screen.get_height():
             self.kill()
 
 
@@ -281,30 +264,105 @@ class Border(pygame.sprite.Sprite):
         self.rect = pygame.Rect(x1, 0, 1, 900)
 
 
+class Count(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.image = pygame.Surface([100, 300])
+        self.font = pygame.font.Font(None, 50)
+        text = self.font.render('0', True, (0, 255, 0))
+        self.image.fill((28, 28, 28))
+        self.image.blit(text, (0, 0))
+        self.rect = pygame.Rect(1100, 15, 100, 300)
+
+    def update(self, *args):
+        self.image.fill((28, 28, 28))
+        text = self.font.render(str(CNT), True, (0, 255, 0))
+        self.image.blit(text, (0, 0))
+
+
+# class EndGameLabel(pygame.sprite.Sprite):
+#     def __init__(self):
+#         super().__init__(all_sprites)
+#
+
+
 def read_skeleton(line):
     print(line)
     for elem in line:
         print(elem)
         if elem == '.':
             sk = BasedSkeleton(all_sprites)
+        elif elem == '*':
+            end_game()
         elif elem == '#':
             pass
 
 
+def end_game():
+    pass
+
+
+def lost():
+    pass
+
+
+def load_level(level_number):
+    global level_map
+    global girl
+    global IN_GAME
+    global bad_guys
+    global borders
+    global CNT
+    global bullets_girl
+    global bullets_skel
+    IN_GAME = True
+    for sprite in all_sprites:
+        sprite.kill()
+    pygame.time.set_timer(SKELETON_SPAWN, 2000)
+    pygame.mixer.music.stop()
+    level_map = []
+    girl = Girl(all_sprites)
+    borders = pygame.sprite.Group()
+    Border(200)
+    Border(1000)
+    Count()
+    CNT = 0
+    bullets_girl = pygame.sprite.Group()
+    bullets_skel = pygame.sprite.Group()
+    bad_guys = pygame.sprite.Group()
+    pygame.time.set_timer(girl_frame_change, 500)
+    pygame.time.set_timer(girl_hit, 200)
+    with open(f'data/level{level_number}.txt', 'r') as level:
+        level_map = [line.strip() for line in level]
+        print(level_map)
+
+
+def main_menu():
+    global background
+    global logo
+    global btn1
+    global btn2
+    global btn3
+    global btnm
+    pygame.mixer.stop()
+    pygame.mixer.music.load("data/main_menu_theme.mp3")
+    pygame.mixer.music.play(-1, 0.0)
+    background = Background(all_sprites)
+    logo = Logo(all_sprites)
+    btn1 = ButtonLevel1(all_sprites)
+    btn2 = ButtonLevel2(all_sprites)
+    btn3 = ButtonLevel3(all_sprites)
+    btnm = MusicButton(all_sprites)
+
+
 all_sprites = pygame.sprite.Group()
-background = Background(all_sprites)
-logo = Logo(all_sprites)
-btn1 = ButtonLevel1(all_sprites)
-btn2 = ButtonLevel2(all_sprites)
-btn3 = ButtonLevel3(all_sprites)
-btnm = MusicButton(all_sprites)
-borders = pygame.sprite.Group()
-bullets_girl = pygame.sprite.Group()
-bullets_skel = pygame.sprite.Group()
+main_menu()
+
+
 if __name__ == '__main__':
+    global level_map
     pygame.init()
     pygame.display.set_caption('BulletHell')
-
     fps = 60  # количество кадров в секунду
     clock = pygame.time.Clock()
     running = True
