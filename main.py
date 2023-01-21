@@ -18,7 +18,7 @@ girl_hit = pygame.USEREVENT + 3
 
 bad_guys = pygame.sprite.Group()
 
-con = sqlite3.connect('WinsAndLoses')
+con = sqlite3.connect('data/WinsAndLooses')
 
 
 def load_image(name, colorkey=None):
@@ -278,10 +278,16 @@ class Count(pygame.sprite.Sprite):
         self.image.blit(text, (0, 0))
 
 
-# class EndGameLabel(pygame.sprite.Sprite):
-#     def __init__(self):
-#         super().__init__(all_sprites)
-#
+class EndGameLabel(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.image = pygame.Surface([400, 500])
+        self.font = pygame.font.Font(None, 300)
+        text = self.font.render('Ты умничка <3', True, (0, 0, 0))
+        self.image.fill((139, 0, 255))
+        self.image.blit(text, (50, 100))
+        self.rect = pygame.Rect(300, 600)
+
 
 
 def read_skeleton(line):
@@ -301,6 +307,8 @@ def end_game(level_passed):
     cur.execute('UPDATE WL'
                 'SET passed True'
                 f'WHERE level = {level_passed}')
+
+
 
 
 def lost():
