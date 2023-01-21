@@ -1,7 +1,7 @@
 import os
 import random
 import sys
-
+import sqlite3
 import pygame
 
 import time
@@ -21,6 +21,8 @@ girl_hit = pygame.USEREVENT + 3
 
 bad_guys = pygame.sprite.Group()
 
+con = sqlite3.connect('wins&loses')
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
@@ -33,6 +35,8 @@ def load_image(name, colorkey=None):
 
 
 class ButtonLevel1(pygame.sprite.Sprite):
+    cur = con.cursor()
+
     if level1_available:
         image = load_image('lv1_en.png')
     else:
@@ -53,6 +57,9 @@ class ButtonLevel1(pygame.sprite.Sprite):
 
 
 class ButtonLevel2(pygame.sprite.Sprite):
+    cur = con.cursor()
+    level2_available = cur.execute('SELECT passed FROM wins&loses '
+                                   'WHERE level like "1"')
     if level2_available:
         image = load_image('lv2_en.png')
     else:
@@ -73,6 +80,9 @@ class ButtonLevel2(pygame.sprite.Sprite):
 
 
 class ButtonLevel3(pygame.sprite.Sprite):
+    cur = con.cursor()
+    level3_available = cur.execute('SELECT passed FROM wins&loses '
+                                   'WHERE level like "2"')
     if level2_available:
         image = load_image('lv3_en.png')
     else:
@@ -230,7 +240,7 @@ class BasedSkeleton(Skeleton):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
-            self.rect.x = random.randrange(200, 1000)
+            self.rect.x = random.randrange(200, 970)
         bad_guys.add(self)
 
     def update(self, *event):
