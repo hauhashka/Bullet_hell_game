@@ -1,10 +1,10 @@
 import os
 import random
-import sys
 import sqlite3
+import sys
+
 import pygame
 
-import time
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
 
@@ -18,7 +18,7 @@ girl_hit = pygame.USEREVENT + 3
 
 bad_guys = pygame.sprite.Group()
 
-con = sqlite3.connect('wins&loses')
+con = sqlite3.connect('WinsAndLoses')
 
 
 def load_image(name, colorkey=None):
@@ -121,8 +121,6 @@ class Logo(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = 250
         self.rect.y = -50
-
-
 
 
 class Girl(pygame.sprite.Sprite):
@@ -292,14 +290,17 @@ def read_skeleton(line):
         print(elem)
         if elem == '.':
             sk = BasedSkeleton(all_sprites)
-        elif elem == '*':
-            end_game()
+        elif elem == '*1':
+            end_game(1)
         elif elem == '#':
             pass
 
 
-def end_game():
-    pass
+def end_game(level_passed):
+    cur = con.cursor()
+    cur.execute('UPDATE WL'
+                'SET passed True'
+                f'WHERE level = {level_passed}')
 
 
 def lost():
@@ -357,7 +358,6 @@ def main_menu():
 
 all_sprites = pygame.sprite.Group()
 main_menu()
-
 
 if __name__ == '__main__':
     global level_map
