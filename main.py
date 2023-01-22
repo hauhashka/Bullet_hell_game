@@ -331,6 +331,7 @@ def lost():
 
 
 def load_level(level_number):
+
     global ON_VICTORY_SCREEN
     global level_map
     global girl
@@ -340,6 +341,8 @@ def load_level(level_number):
     global CNT
     global bullets_girl
     global bullets_skel
+    global spawnlane_index
+    spawnlane_index = 0
     ON_VICTORY_SCREEN = False
     IN_GAME = True
     for sprite in all_sprites:
@@ -362,6 +365,7 @@ def load_level(level_number):
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
         print(level_map)
+    print('ye')
 
 
 def main_menu():
@@ -443,6 +447,7 @@ if __name__ == '__main__':
             if event.type == girl_dance and ON_VICTORY_SCREEN and dance_limit <= 10:
                 girl.dance()
                 dance_limit += 1
+                print(dance_limit)
             elif dance_limit > 10:
                 girl.kill()
                 main_menu()
