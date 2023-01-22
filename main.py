@@ -15,6 +15,7 @@ level3_available = False
 SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 girl_hit = pygame.USEREVENT + 3
+girl_dance = pygame.USEREVENT + 4
 
 bad_guys = pygame.sprite.Group()
 
@@ -130,6 +131,7 @@ class Girl(pygame.sprite.Sprite):
     girl_stands = load_image('girl_idle.png')
     girl_hurt = load_image('girl_hurt.png')
     girl_walk = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
+    girl_dance = [load_image('girl_dance_1.png'), load_image('girl_dance_2.png')]
 
     def __init__(self, *group):
         super().__init__(*group)
@@ -172,7 +174,7 @@ class Girl(pygame.sprite.Sprite):
             pygame.draw.rect(screen, (255, 0, 0), (120, 20, 30, 30), 0)
         if 200 < self.rect.x + self.movex < 910:
             self.rect.x += self.movex
-        if -50 < self.rect.y + self.movey < 850:
+        if 150 < self.rect.y + self.movey < 850:
             self.rect.y += self.movey
 
     def change_frame(self):
@@ -180,6 +182,10 @@ class Girl(pygame.sprite.Sprite):
         if self.frame > 1:
             self.frame = 0
         self.image = Girl.girl_walk[self.frame]
+
+    def dance(self):
+        self.frame += 1
+        self.image = Girl.girl_dance[self.frame % 2]
 
 
 class BulletGirl(pygame.sprite.Sprite):
@@ -283,14 +289,14 @@ class Count(pygame.sprite.Sprite):
 class EndGameLabel(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
-        self.image = pygame.Surface([600, 300])
+        self.image = pygame.Surface([600, 150])
         self.font = pygame.font.Font(None, 72)
-        self.rect = pygame.Rect(300, 300, 600, 200)
+        self.rect = pygame.Rect(300, 0, 600, 200)
 
     def update(self, *args):
         text = self.font.render('Ты умничка <3', True, (0, 0, 0))
         self.image.fill((139, 0, 255))
-        self.image.blit(text, (130, 100))
+        self.image.blit(text, (130, 50))
 
 
 def read_skeleton(line):
@@ -304,9 +310,11 @@ def read_skeleton(line):
 
 
 def end_game(level_passed):
+    global ON_VICTORY_SCREEN
     global IN_GAME
     EndGameLabel()
     IN_GAME = False
+    ON_VICTORY_SCREEN = True
     cur = con.cursor()
     print(level_passed)
     print(f'WHERE level = {level_passed}')
@@ -315,6 +323,7 @@ def end_game(level_passed):
                 WHERE level = {level_passed}''')
     con.commit()
     print(cur.execute("""SELECT passed from WL""").fetchall())
+    pygame.time.set_timer(girl_dance, 500)
 
 
 def lost():
@@ -322,6 +331,7 @@ def lost():
 
 
 def load_level(level_number):
+    global ON_VICTORY_SCREEN
     global level_map
     global girl
     global IN_GAME
@@ -330,6 +340,7 @@ def load_level(level_number):
     global CNT
     global bullets_girl
     global bullets_skel
+    ON_VICTORY_SCREEN = False
     IN_GAME = True
     for sprite in all_sprites:
         sprite.kill()
@@ -347,18 +358,24 @@ def load_level(level_number):
     bad_guys = pygame.sprite.Group()
     pygame.time.set_timer(girl_frame_change, 500)
     pygame.time.set_timer(girl_hit, 200)
+
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
         print(level_map)
 
 
 def main_menu():
+    for elem in all_sprites:
+        elem.kill()
+    global ON_VICTORY_SCREEN
     global background
     global logo
     global btn1
     global btn2
     global btn3
     global btnm
+    ON_VICTORY_SCREEN = False
+    screen.fill((28, 28, 28))
     pygame.mixer.stop()
     pygame.mixer.music.load("data/main_menu_theme.mp3")
     pygame.mixer.music.play(-1, 0.0)
@@ -384,6 +401,8 @@ if __name__ == '__main__':
     speed = 7
     spawnlane_index = 0
     IN_GAME = False
+    dance_limit = 0
+    ON_VICTORY_SCREEN = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -417,11 +436,17 @@ if __name__ == '__main__':
                     girl.move(0, speed)
                 if event.key == pygame.K_DOWN:
                     girl.move(0, -speed)
-
             if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
             if event.type == girl_hit and IN_GAME:
                 girl.hit()
+            if event.type == girl_dance and ON_VICTORY_SCREEN and dance_limit <= 10:
+                girl.dance()
+                dance_limit += 1
+            elif dance_limit > 10:
+                girl.kill()
+                main_menu()
+                dance_limit = 0
             all_sprites.update(event)
         screen.fill((28, 28, 28))
         all_sprites.update()
