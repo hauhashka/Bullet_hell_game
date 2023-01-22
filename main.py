@@ -417,6 +417,7 @@ if __name__ == '__main__':
                     girl.move(0, speed)
                 if event.key == pygame.K_DOWN:
                     girl.move(0, -speed)
+
             if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
             if event.type == girl_hit and IN_GAME:
