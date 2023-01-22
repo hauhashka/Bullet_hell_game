@@ -56,8 +56,11 @@ class ButtonLevel1(pygame.sprite.Sprite):
 class ButtonLevel2(pygame.sprite.Sprite):
     cur = con.cursor()
     level2_available = cur.execute('SELECT passed FROM WL '
-                                   'WHERE level like "1"')
-    if level2_available:
+                                   'WHERE level like "1"').fetchall()
+    print(*level2_available[0])
+    print(*level2_available[0])
+    print(cur.execute("""SELECT passed from WL""").fetchall())
+    if level2_available[0][0]:
         image = load_image('lv2_en.png')
     else:
         image = load_image('lv2_dis.png')
@@ -131,7 +134,7 @@ class Girl(pygame.sprite.Sprite):
     def __init__(self, *group):
         super().__init__(*group)
         self.image = Girl.girl_stands
-        self.speed = 10
+        self.speed = 6
         self.rect = self.image.get_rect().move(570, 700)
         self.movex = 0
         self.movey = 0
@@ -280,14 +283,14 @@ class Count(pygame.sprite.Sprite):
 class EndGameLabel(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
-        self.image = pygame.Surface([400, 500])
-        self.font = pygame.font.Font(None, 300)
-        self.rect = pygame.Rect(300, 600, 500, 500)
+        self.image = pygame.Surface([600, 300])
+        self.font = pygame.font.Font(None, 72)
+        self.rect = pygame.Rect(300, 300, 600, 200)
 
     def update(self, *args):
         text = self.font.render('Ты умничка <3', True, (0, 0, 0))
         self.image.fill((139, 0, 255))
-        self.image.blit(text, (50, 100))
+        self.image.blit(text, (130, 100))
 
 
 def read_skeleton(line):
@@ -305,10 +308,13 @@ def end_game(level_passed):
     EndGameLabel()
     IN_GAME = False
     cur = con.cursor()
-    cur.execute('UPDATE WL'
-                'SET passed = 1'
-                f'WHERE level = {level_passed}')
+    print(level_passed)
+    print(f'WHERE level = {level_passed}')
+    cur.execute(f'''UPDATE WL
+                SET passed = 1
+                WHERE level = {level_passed}''')
     con.commit()
+    print(cur.execute("""SELECT passed from WL""").fetchall())
 
 
 def lost():
@@ -390,6 +396,7 @@ if __name__ == '__main__':
                 else:
                     print(level_map[spawnlane_index])
                     spawnlane_index += 1
+
             if event.type == pygame.KEYDOWN and IN_GAME:
                 if event.key == pygame.K_LEFT:
                     girl.move(-speed, 0)
