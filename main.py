@@ -59,14 +59,8 @@ class ButtonLevel1(pygame.sprite.Sprite):
 class ButtonLevel2(pygame.sprite.Sprite):
     cur = con.cursor()
     level2_available = cur.execute('SELECT passed FROM WL '
-                                   'WHERE level like "1"').fetchall()
-    print(*level2_available[0])
-    print(*level2_available[0])
-    print(cur.execute("""SELECT passed from WL""").fetchall())
-    if level2_available[0][0]:
-        image = load_image('lv2_en.png')
-    else:
-        image = load_image('lv2_dis.png')
+                                   'WHERE level like "1"').fetchall() \
+            level2_images = (load_image('lvl2_en.png'), load_image('lvl2_dis.png'))
 
     def __init__(self, *group):
         super().__init__(*group)
@@ -75,18 +69,26 @@ class ButtonLevel2(pygame.sprite.Sprite):
         self.rect.x = 90
         self.rect.y = 450
         self.pos = (200, 100)
+        if level2_available[0][0]:
+            image = load_image('lv2_en.png')
+        else:
+            image = load_image('lv2_dis.png')
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and ButtonLevel2.level2_available[0][0]:
             load_level(2)
+        if level2_available[0][0]:
+            image = load_image('lv2_en.png')
+        else:
+            image = load_image('lv2_dis.png')
 
 
 class ButtonLevel3(pygame.sprite.Sprite):
     cur = con.cursor()
     level3_available = cur.execute('SELECT passed FROM WL '
-                                   'WHERE level like "2"')
-    if level2_available:
+                                   'WHERE level like "2"').fetchall()
+    if level3_available[0][0]:
         image = load_image('lv3_en.png')
     else:
         image = load_image('lv3_dis.png')
@@ -203,6 +205,7 @@ class Girl(pygame.sprite.Sprite):
     def cry(self):
         self.frame += 1
         self.image = Girl.girl_cry[self.frame % 2]
+
 
 class BulletGirl(pygame.sprite.Sprite):
     tile = load_image('tile_girl.png')
@@ -393,12 +396,16 @@ def read_skeleton(line):
         if elem == '.':
             sk = BasedSkeleton(all_sprites)
         elif elem == '1':
-            end_game(1)
+            win(1)
+        elif elem == '2':
+            win(2)
+        elif elem == '3':
+            win(3)
         elif elem == '#':
             ask = AdvancedSkeleton(all_sprites)
 
 
-def end_game(level_passed):
+def win(level_passed):
     global ON_VICTORY_SCREEN
     global IN_GAME
     EndGameLabelWin()
