@@ -4,10 +4,10 @@ import sqlite3
 import sys
 
 import pygame
-
+"""Задание границ экрана и инициализация самого экрана"""
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
-
+"""Инициализация pygame и все необходимые переменные"""
 pygame.init()
 level1_available = True
 level2_available = False
@@ -25,6 +25,7 @@ con = sqlite3.connect('data/WinsAndLooses')
 
 
 def load_image(name, colorkey=None):
+    '''Функция необходимая для загрузки картинки'''
     fullname = os.path.join('data', name)
     # если файл не существует, то выходим
     if not os.path.isfile(fullname):
@@ -35,6 +36,7 @@ def load_image(name, colorkey=None):
 
 
 class ButtonLevel1(pygame.sprite.Sprite):
+    """Класс необходимый для создания кнопки первого уровня на главном экране"""
     cur = con.cursor()
 
     if level1_available:
@@ -57,12 +59,12 @@ class ButtonLevel1(pygame.sprite.Sprite):
 
 
 class ButtonLevel2(pygame.sprite.Sprite):
-
+    """Класс для создания кнопки второго уровня на главном экране"""
     def __init__(self, *group):
         super().__init__(*group)
         cur = con.cursor()
         self.level2_available = cur.execute('SELECT passed FROM WL '
-                                       'WHERE level like "1"').fetchall()
+                                            'WHERE level like "1"').fetchall()
         level2_images = (load_image('lv2_en.png'), load_image('lv2_dis.png'))
         if self.level2_available[0][0]:
             self.image = level2_images[0]
@@ -73,7 +75,6 @@ class ButtonLevel2(pygame.sprite.Sprite):
         self.rect.y = 450
         self.pos = (200, 100)
 
-
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and self.level2_available[0][0]:
@@ -81,16 +82,12 @@ class ButtonLevel2(pygame.sprite.Sprite):
 
 
 class ButtonLevel3(pygame.sprite.Sprite):
-    cur = con.cursor()
-    level3_available = cur.execute('SELECT passed FROM WL '
-                                   'WHERE level like "2"').fetchall()
-    level3_images = (load_image('lv3_en.png'), load_image('lv3_dis.png'))
-
+    """"Клосс для создания кнопки третьего уровня на главном экране"""
     def __init__(self, *group):
         super().__init__(*group)
         cur = con.cursor()
         self.level3_available = cur.execute('SELECT passed FROM WL '
-                                       'WHERE level like "2"').fetchall()
+                                            'WHERE level like "2"').fetchall()
         level3_images = (load_image('lv3_en.png'), load_image('lv3_dis.png'))
         if self.level3_available[0][0]:
             self.image = level3_images[0]
@@ -101,13 +98,14 @@ class ButtonLevel3(pygame.sprite.Sprite):
         self.rect.y = 550
         self.pos = (200, 100)
 
-
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and self.level3_available[0][0]:
             load_level(3)
 
+
 class Background(pygame.sprite.Sprite):
+    """Класс для отрисовки фона на главном экране"""
     girl = load_image('girl_1.1.jpg')
     girl = pygame.transform.scale(girl, (600, 900))
 
@@ -121,6 +119,7 @@ class Background(pygame.sprite.Sprite):
 
 
 class Logo(pygame.sprite.Sprite):
+    """Класс для отрисовки логотипа на главном экране"""
     logo = load_image('logo.png')
 
     def __init__(self, *group):
@@ -132,6 +131,7 @@ class Logo(pygame.sprite.Sprite):
 
 
 class Girl(pygame.sprite.Sprite):
+    """Класс для создания и проработки логики движения девочки на экране игры"""
     girl_stands = load_image('girl_idle.png')
     girl_hurt = load_image('girl_hurt.png')
     girl_walk = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
@@ -139,6 +139,7 @@ class Girl(pygame.sprite.Sprite):
     girl_cry = [load_image('girl_cry_1.png'), load_image('girl_cry_2.png')]
 
     def __init__(self, *group):
+        """Инициализация спрайта девочки"""
         super().__init__(*group)
         self.image = Girl.girl_stands
         self.speed = 6
@@ -153,6 +154,7 @@ class Girl(pygame.sprite.Sprite):
         self.cooldown_hurt = 700
 
     def hit(self):
+        """Метод для проработки снимания хп"""
         now = pygame.time.get_ticks()
         if pygame.sprite.spritecollideany(self, bad_guys) or pygame.sprite.spritecollideany(self, bullets_skel):
             if now - self.last_hurt >= self.cooldown_hurt:
@@ -169,6 +171,7 @@ class Girl(pygame.sprite.Sprite):
                     lost()
 
     def shoot(self):
+        """Метод для стрельбы"""
         now = pygame.time.get_ticks()
         if now - self.last >= self.cooldown:
             self.last = now
@@ -179,6 +182,7 @@ class Girl(pygame.sprite.Sprite):
         self.movey += y
 
     def update(self, *args):
+        """Метод для прорисовки всех изменений спрайта девочки на файле"""
         if self.hp > 0:
             pygame.draw.rect(screen, (255, 0, 0), (50, 20, 30, 30), 0)
         if self.hp > 1:
@@ -193,24 +197,27 @@ class Girl(pygame.sprite.Sprite):
             self.hp -= 1
 
     def change_frame(self):
+        """Метод для изменения спрайта девочки во время ходьбы"""
         self.frame += 1
-        if self.frame > 1:
-            self.frame = 0
-        self.image = Girl.girl_walk[self.frame]
+        self.image = Girl.girl_walk[self.frame % 2]
 
     def dance(self):
+        """Метод для изменения спрайта девочки во время танца"""
         self.frame += 1
         self.image = Girl.girl_dance[self.frame % 2]
 
     def cry(self):
+        """Метод для изменения спрайта девочки во время плача"""
         self.frame += 1
         self.image = Girl.girl_cry[self.frame % 2]
 
 
 class BulletGirl(pygame.sprite.Sprite):
+    """Класс пуль-сигарет девочки"""
     tile = load_image('tile_girl.png')
 
     def __init__(self, *group):
+        """Инициализация спрайта пуль-сигарет девочки"""
         super().__init__(*group)
         self.image = BulletGirl.tile
         self.add(bullets_girl)
@@ -220,15 +227,18 @@ class BulletGirl(pygame.sprite.Sprite):
         self.vel = 5
 
     def update(self, *args):
+        """Прописано движение пуль и удаления их при пересечении границ экрана"""
         self.rect.y -= self.vel
         if self.rect.y < -50:
             self.kill()
 
 
 class BasedSkeleton(pygame.sprite.Sprite):
+    """Обычный скелет - класс"""
     sk_image = load_image('skeleton.png')
 
     def __init__(self, *group):
+        """Иницаилизация обычного скелета"""
         super().__init__(*group)
         self.image = BasedSkeleton.sk_image
         self.rect = self.image.get_rect()
@@ -239,6 +249,7 @@ class BasedSkeleton(pygame.sprite.Sprite):
         bad_guys.add(self)
 
     def update(self, *event):
+        """Движение скелета и удаление его если был контакт с пулей"""
         global CNT
         self.rect.y += self.vel
         if pygame.sprite.spritecollideany(self, bullets_girl):
@@ -253,29 +264,13 @@ class BasedSkeleton(pygame.sprite.Sprite):
             self.kill()
 
 
-# class BulletSKeleton(pygame.sprite.Sprite):
-#     tile = load_image('tile_skeleton.png')
-#
-#     def __init__(self, x, y, *group):
-#         super().__init__(*group)
-#         self.image = BulletSKeleton.tile
-#         self.add(bullets_skel)
-#         self.rect = self.image.get_rect()
-#         self.rect.x = x + 26
-#         self.rect.y = y + 32
-#         self.vel = 3
-#
-#     def update(self, *args):
-#         self.rect.y += self.vel
-#         if self.rect.y > screen.get_height() + 50:
-#             self.kill()
-
-
 class AdvancedSkeleton(pygame.sprite.Sprite):
+    """Класс для продвинутого скелета"""
     sk_image_1 = load_image('skeleton_angry_1.png')
     sk_image_2 = load_image('skeleton_angry_2.png')
 
     def __init__(self, *group):
+        """Инициализация продвинутого скелета"""
         super().__init__(*group)
         self.image = AdvancedSkeleton.sk_image_1
         self.rect = self.image.get_rect()
@@ -289,10 +284,8 @@ class AdvancedSkeleton(pygame.sprite.Sprite):
         self.hp = 2
         self.vel = 1
 
-    # def shoot(self):
-    #     BulletSKeleton(self.rect.x, self.rect.y, all_sprites)
-
     def update(self, *args):
+        """Движение скелета, изменение его при контакте с пулей и удаление его при втором контакте"""
         global CNT
         self.rect.y += self.vel
         if pygame.sprite.spritecollideany(self, bullets_girl):
@@ -317,16 +310,19 @@ class AdvancedSkeleton(pygame.sprite.Sprite):
 
 
 class MusicButton(pygame.sprite.Sprite):
+    """Кнопка музыки на главном экране"""
     img_on = load_image('mbutton_on.png')
     img_off = load_image('mbutton_off.png')
 
     def __init__(self, *group):
+        """Инициализация кнопки"""
         super().__init__(*group)
         self.image = MusicButton.img_on
         self.rect = self.image.get_rect().move(1100, 800)
         self.is_playing = True
 
     def update(self, *args):
+        """Изменение ее, если игрок не хочет ее слушать"""
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and self.is_playing:
             pygame.mixer.music.pause()
@@ -340,7 +336,9 @@ class MusicButton(pygame.sprite.Sprite):
 
 
 class Border(pygame.sprite.Sprite):
+    """Границы игровой области"""
     def __init__(self, x1):
+        """Отрисовка границ"""
         super().__init__(all_sprites)
         self.add(borders)
         self.image = pygame.Surface([10, 900])
@@ -349,7 +347,9 @@ class Border(pygame.sprite.Sprite):
 
 
 class Count(pygame.sprite.Sprite):
+    """Счетчик смертей скелетов"""
     def __init__(self):
+        """Отрисовка счетчика"""
         super().__init__(all_sprites)
         self.image = pygame.Surface([100, 300])
         self.font = pygame.font.Font(None, 50)
@@ -359,38 +359,46 @@ class Count(pygame.sprite.Sprite):
         self.rect = pygame.Rect(1100, 15, 100, 300)
 
     def update(self, *args):
+        """Изменение счета"""
         self.image.fill((28, 28, 28))
         text = self.font.render(str(CNT), True, (0, 255, 0))
         self.image.blit(text, (0, 0))
 
 
 class EndGameLabelWin(pygame.sprite.Sprite):
+    """Конечная надпись если игрок победил и прошел уровень до конца"""
     def __init__(self):
+        """Инициализация надписи"""
         super().__init__(all_sprites)
         self.image = pygame.Surface([600, 150])
         self.font = pygame.font.Font(None, 72)
         self.rect = pygame.Rect(300, 0, 600, 200)
 
     def update(self, *args):
+        """Появление текста ты умничка и вывод на экран"""
         text = self.font.render('Ты умничка <3', True, (0, 0, 0))
         self.image.fill((139, 0, 255))
         self.image.blit(text, (130, 50))
 
 
 class EndGameLabelLoose(pygame.sprite.Sprite):
+    """Надпись если игрок проиграл"""
     def __init__(self):
+        """Инициализация надписи"""
         super().__init__(all_sprites)
         self.image = pygame.Surface([600, 150])
         self.font = pygame.font.Font(None, 72)
         self.rect = pygame.Rect(300, 0, 600, 200)
 
     def update(self, *args):
+        """Появление текста плоха и вывод на экран"""
         text = self.font.render('Плоха', True, (0, 0, 0))
         self.image.fill((240, 0, 10))
         self.image.blit(text, (230, 50))
 
 
 def read_skeleton(line):
+    """Функция для чтения файла с уровня, появления скелетов и конца уровня"""
     global ask
     for elem in line:
         if elem == '.':
@@ -406,6 +414,7 @@ def read_skeleton(line):
 
 
 def win(level_passed):
+    """Функция для вывода надписи победы на экран"""
     global ON_VICTORY_SCREEN
     global IN_GAME
     EndGameLabelWin()
@@ -423,6 +432,7 @@ def win(level_passed):
 
 
 def lost():
+    """Функция для вывода надписи проигрыша на экран"""
     global ON_LOST_SCREEN
     global IN_GAME
     EndGameLabelLoose()
@@ -434,6 +444,7 @@ def lost():
 
 
 def load_level(level_number):
+    """Функция для начала игры"""
     global ON_VICTORY_SCREEN
     global level_map
     global girl
@@ -477,6 +488,7 @@ def load_level(level_number):
 
 
 def main_menu():
+    """Функция для отображения главного меню"""
     for elem in all_sprites:
         elem.kill()
     global ON_LOST_SCREEN
@@ -500,11 +512,12 @@ def main_menu():
     btn3 = ButtonLevel3(all_sprites)
     btnm = MusicButton(all_sprites)
 
-
+"""создание главной группы спрайтов и вывод главного меню"""
 all_sprites = pygame.sprite.Group()
 main_menu()
 
 if __name__ == '__main__':
+    """Главный игровой цикл"""
     global level_map
     pygame.init()
     pygame.display.set_caption('BulletHell')
