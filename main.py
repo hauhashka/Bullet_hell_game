@@ -59,7 +59,7 @@ class ButtonLevel1(pygame.sprite.Sprite):
 class ButtonLevel2(pygame.sprite.Sprite):
     cur = con.cursor()
     level2_available = cur.execute('SELECT passed FROM WL '
-                                   'WHERE level like "1"').fetchall() \
+                                   'WHERE level like "1"').fetchall()
             level2_images = (load_image('lvl2_en.png'), load_image('lvl2_dis.png'))
 
     def __init__(self, *group):
