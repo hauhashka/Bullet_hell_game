@@ -16,6 +16,8 @@ SKELETON_SPAWN = pygame.USEREVENT + 1
 girl_frame_change = pygame.USEREVENT + 2
 girl_hit = pygame.USEREVENT + 3
 girl_dance = pygame.USEREVENT + 4
+skeleton_shoot = pygame.USEREVENT + 5
+skeleton_change_frame = pygame.USEREVENT + 6
 
 bad_guys = pygame.sprite.Group()
 
@@ -76,7 +78,7 @@ class ButtonLevel2(pygame.sprite.Sprite):
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
-                self.rect.collidepoint(args[0].pos) and level2_available:
+                self.rect.collidepoint(args[0].pos) and ButtonLevel2.level2_available[0][0]:
             load_level(2)
 
 
@@ -99,7 +101,7 @@ class ButtonLevel3(pygame.sprite.Sprite):
 
     def update(self, *args):
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
-                self.rect.collidepoint(args[0].pos) and level3_available:
+                self.rect.collidepoint(args[0].pos) and ButtonLevel3.level3_available[0][0]:
             load_level(3)
 
 
@@ -149,11 +151,17 @@ class Girl(pygame.sprite.Sprite):
 
     def hit(self):
         now = pygame.time.get_ticks()
-        if pygame.sprite.spritecollideany(self, bad_guys):
+        if pygame.sprite.spritecollideany(self, bad_guys) or pygame.sprite.spritecollideany(self, bullets_skel):
             if now - self.last_hurt >= self.cooldown_hurt:
+                if pygame.sprite.spritecollideany(self, bad_guys):
+                    pygame.sprite.spritecollideany(self, bad_guys).kill()
+                while pygame.sprite.spritecollideany(self, bullets_skel):
+                    pygame.sprite.spritecollideany(self, bullets_skel).rect.x += pygame.sprite.spritecollideany(self, bullets_skel).vel
+                    pygame.sprite.spritecollideany(self, bullets_skel).kill()
                 self.last_hurt = now
                 self.hp -= 1
                 self.image = Girl.girl_hurt
+
 
     def shoot(self):
         now = pygame.time.get_ticks()
@@ -176,6 +184,8 @@ class Girl(pygame.sprite.Sprite):
             self.rect.x += self.movex
         if 150 < self.rect.y + self.movey < 850:
             self.rect.y += self.movey
+        if pygame.sprite.spritecollideany(self, bullets_skel):
+            self.hp -= 1
 
     def change_frame(self):
         self.frame += 1
@@ -204,19 +214,10 @@ class BulletGirl(pygame.sprite.Sprite):
         self.rect.y -= self.vel
         if self.rect.y < -50:
             self.kill()
-        # if pygame.sprite.spritecollideany(self, bad_guys):
-        #     self.kill()
 
 
-class Skeleton(pygame.sprite.Sprite):
-    def __init__(self, *group):
-        super().__init__(*group)
 
-    def hurt(self):
-        self.kill()
-
-
-class BasedSkeleton(Skeleton):
+class BasedSkeleton(pygame.sprite.Sprite):
     sk_image = load_image('skeleton.png')
 
     def __init__(self, *group):
@@ -225,17 +226,78 @@ class BasedSkeleton(Skeleton):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
-            self.rect.x = random.randrange(200, 970)
+            self.rect.x = random.randrange(200, 950)
         bad_guys.add(self)
 
     def update(self, *event):
         global CNT
         self.rect.y += 1
         if pygame.sprite.spritecollideany(self, bullets_girl):
+            pygame.sprite.spritecollideany(self, bullets_girl).kill()
             self.kill()
-            CNT += 1
+            CNT += 10
         if self.rect.y > screen.get_height():
+            CNT -= 20
+            if CNT - 20 < 0:
+                CNT = 0
+                girl.hp -= 1
             self.kill()
+
+
+class BulletSKeleton(pygame.sprite.Sprite):
+    tile = load_image('tile_skeleton.png')
+
+    def __init__(self, x, y, *group):
+        super().__init__(*group)
+        self.image = BulletSKeleton.tile
+        self.add(bullets_skel)
+        self.rect = self.image.get_rect()
+        self.rect.x = x + 26
+        self.rect.y = y + 32
+        self.vel = 3
+
+    def update(self, *args):
+        self.rect.y += self.vel
+        if self.rect.y > screen.get_height() + 50:
+            self.kill()
+
+
+class AdvancedSkeleton(pygame.sprite.Sprite):
+    sk_images = [load_image('skeleton_angry_1.png'), load_image('skeleton_angry_2.png')]
+
+    def __init__(self, *group):
+        super().__init__(*group)
+        self.image = AdvancedSkeleton.sk_images[0]
+        self.rect = self.image.get_rect()
+        self.rect.x = random.randint(200, 800)
+        while pygame.sprite.spritecollide(self, bad_guys, False):
+            self.rect.x = random.randrange(200, 950)
+            print(self.rect.x)
+        ask_group.add(self)
+        bad_guys.add(self)
+        self.frame = 0
+        self.hp = 3
+
+    def shoot(self):
+        BulletSKeleton(self.rect.x, self.rect.y, all_sprites)
+
+    def update(self, *args):
+        global CNT
+        self.rect.y += 1
+        if pygame.sprite.spritecollideany(self, bullets_girl):
+            self.hp -= 1
+            if self.hp == 0:
+                self.kill()
+                CNT += 20
+        if self.rect.y > screen.get_height():
+            CNT -= 20
+            if CNT - 20 < 0:
+                CNT = 0
+            self.kill()
+
+    def change_frame(self):
+        self.frame += 1
+        self.image = AdvancedSkeleton.sk_images[self.frame % 2]
 
 
 class MusicButton(pygame.sprite.Sprite):
@@ -300,13 +362,14 @@ class EndGameLabel(pygame.sprite.Sprite):
 
 
 def read_skeleton(line):
+    global ask
     for elem in line:
         if elem == '.':
             sk = BasedSkeleton(all_sprites)
         elif elem == '1':
             end_game(1)
         elif elem == '#':
-            pass
+            ask = AdvancedSkeleton(all_sprites)
 
 
 def end_game(level_passed):
@@ -331,7 +394,6 @@ def lost():
 
 
 def load_level(level_number):
-
     global ON_VICTORY_SCREEN
     global level_map
     global girl
@@ -342,6 +404,9 @@ def load_level(level_number):
     global bullets_girl
     global bullets_skel
     global spawnlane_index
+    global ln
+    global ask_group
+    ln = level_number
     spawnlane_index = 0
     ON_VICTORY_SCREEN = False
     IN_GAME = True
@@ -361,7 +426,10 @@ def load_level(level_number):
     bad_guys = pygame.sprite.Group()
     pygame.time.set_timer(girl_frame_change, 500)
     pygame.time.set_timer(girl_hit, 200)
-
+    ask_group = pygame.sprite.Group()
+    if level_number > 1:
+        pygame.time.set_timer(skeleton_shoot, 1500)
+        pygame.time.set_timer(skeleton_change_frame, 750)
     with open(f'data/level{level_number}.txt', 'r') as level:
         level_map = [line.strip() for line in level]
         print(level_map)
@@ -442,6 +510,12 @@ if __name__ == '__main__':
                     girl.move(0, -speed)
             if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
+            if event.type == skeleton_shoot and IN_GAME and ln > 1:
+                for elem in ask_group:
+                    elem.shoot()
+            if event.type == skeleton_change_frame and IN_GAME and ln > 1:
+                for elem in ask_group:
+                    elem.change_frame()
             if event.type == girl_hit and IN_GAME:
                 girl.hit()
             if event.type == girl_dance and ON_VICTORY_SCREEN and dance_limit <= 10:
