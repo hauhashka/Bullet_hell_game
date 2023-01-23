@@ -134,6 +134,7 @@ class Girl(pygame.sprite.Sprite):
     girl_hurt = load_image('girl_hurt.png')
     girl_walk = [load_image('girl_walk_1.png'), load_image('girl_walk_2.png')]
     girl_dance = [load_image('girl_dance_1.png'), load_image('girl_dance_2.png')]
+    girl_cry = [load_image('girl_cry_1.png'), load_image('girl_cry_2.png')]
 
     def __init__(self, *group):
         super().__init__(*group)
@@ -156,12 +157,14 @@ class Girl(pygame.sprite.Sprite):
                 if pygame.sprite.spritecollideany(self, bad_guys):
                     pygame.sprite.spritecollideany(self, bad_guys).kill()
                 while pygame.sprite.spritecollideany(self, bullets_skel):
-                    pygame.sprite.spritecollideany(self, bullets_skel).rect.x += pygame.sprite.spritecollideany(self, bullets_skel).vel
+                    pygame.sprite.spritecollideany(self, bullets_skel).rect.x += pygame.sprite.spritecollideany(self,
+                                                                                                                bullets_skel).vel
                     pygame.sprite.spritecollideany(self, bullets_skel).kill()
                 self.last_hurt = now
                 self.hp -= 1
                 self.image = Girl.girl_hurt
-
+                if self.hp == 0:
+                    lost()
 
     def shoot(self):
         now = pygame.time.get_ticks()
@@ -197,6 +200,9 @@ class Girl(pygame.sprite.Sprite):
         self.frame += 1
         self.image = Girl.girl_dance[self.frame % 2]
 
+    def cry(self):
+        self.frame += 1
+        self.image = Girl.girl_cry[self.frame % 2]
 
 class BulletGirl(pygame.sprite.Sprite):
     tile = load_image('tile_girl.png')
@@ -216,7 +222,6 @@ class BulletGirl(pygame.sprite.Sprite):
             self.kill()
 
 
-
 class BasedSkeleton(pygame.sprite.Sprite):
     sk_image = load_image('skeleton.png')
 
@@ -227,11 +232,12 @@ class BasedSkeleton(pygame.sprite.Sprite):
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
             self.rect.x = random.randrange(200, 950)
+        self.vel = 1
         bad_guys.add(self)
 
     def update(self, *event):
         global CNT
-        self.rect.y += 1
+        self.rect.y += self.vel
         if pygame.sprite.spritecollideany(self, bullets_girl):
             pygame.sprite.spritecollideany(self, bullets_girl).kill()
             self.kill()
@@ -240,34 +246,35 @@ class BasedSkeleton(pygame.sprite.Sprite):
             CNT -= 20
             if CNT - 20 < 0:
                 CNT = 0
-                girl.hp -= 1
+            girl.hp -= 1
             self.kill()
 
 
-class BulletSKeleton(pygame.sprite.Sprite):
-    tile = load_image('tile_skeleton.png')
-
-    def __init__(self, x, y, *group):
-        super().__init__(*group)
-        self.image = BulletSKeleton.tile
-        self.add(bullets_skel)
-        self.rect = self.image.get_rect()
-        self.rect.x = x + 26
-        self.rect.y = y + 32
-        self.vel = 3
-
-    def update(self, *args):
-        self.rect.y += self.vel
-        if self.rect.y > screen.get_height() + 50:
-            self.kill()
+# class BulletSKeleton(pygame.sprite.Sprite):
+#     tile = load_image('tile_skeleton.png')
+#
+#     def __init__(self, x, y, *group):
+#         super().__init__(*group)
+#         self.image = BulletSKeleton.tile
+#         self.add(bullets_skel)
+#         self.rect = self.image.get_rect()
+#         self.rect.x = x + 26
+#         self.rect.y = y + 32
+#         self.vel = 3
+#
+#     def update(self, *args):
+#         self.rect.y += self.vel
+#         if self.rect.y > screen.get_height() + 50:
+#             self.kill()
 
 
 class AdvancedSkeleton(pygame.sprite.Sprite):
-    sk_images = [load_image('skeleton_angry_1.png'), load_image('skeleton_angry_2.png')]
+    sk_image_1 = load_image('skeleton_angry_1.png')
+    sk_image_2 = load_image('skeleton_angry_2.png')
 
     def __init__(self, *group):
         super().__init__(*group)
-        self.image = AdvancedSkeleton.sk_images[0]
+        self.image = AdvancedSkeleton.sk_image_1
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
@@ -276,28 +283,34 @@ class AdvancedSkeleton(pygame.sprite.Sprite):
         ask_group.add(self)
         bad_guys.add(self)
         self.frame = 0
-        self.hp = 3
+        self.hp = 2
+        self.vel = 1
 
-    def shoot(self):
-        BulletSKeleton(self.rect.x, self.rect.y, all_sprites)
+    # def shoot(self):
+    #     BulletSKeleton(self.rect.x, self.rect.y, all_sprites)
 
     def update(self, *args):
         global CNT
-        self.rect.y += 1
+        self.rect.y += self.vel
         if pygame.sprite.spritecollideany(self, bullets_girl):
             self.hp -= 1
             if self.hp == 0:
-                self.kill()
                 CNT += 20
+                self.kill()
+            elif self.hp == 1:
+                self.image = AdvancedSkeleton.sk_image_2
+                pygame.sprite.spritecollideany(self, bullets_girl).kill()
+
         if self.rect.y > screen.get_height():
             CNT -= 20
             if CNT - 20 < 0:
                 CNT = 0
+            girl.hp -= 1
             self.kill()
 
-    def change_frame(self):
-        self.frame += 1
-        self.image = AdvancedSkeleton.sk_images[self.frame % 2]
+    # def change_frame(self):
+    #     self.frame += 1
+    #     self.image = AdvancedSkeleton.sk_images[self.frame % 2]
 
 
 class MusicButton(pygame.sprite.Sprite):
@@ -348,7 +361,7 @@ class Count(pygame.sprite.Sprite):
         self.image.blit(text, (0, 0))
 
 
-class EndGameLabel(pygame.sprite.Sprite):
+class EndGameLabelWin(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
         self.image = pygame.Surface([600, 150])
@@ -359,6 +372,19 @@ class EndGameLabel(pygame.sprite.Sprite):
         text = self.font.render('Ты умничка <3', True, (0, 0, 0))
         self.image.fill((139, 0, 255))
         self.image.blit(text, (130, 50))
+
+
+class EndGameLabelLoose(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.image = pygame.Surface([600, 150])
+        self.font = pygame.font.Font(None, 72)
+        self.rect = pygame.Rect(300, 0, 600, 200)
+
+    def update(self, *args):
+        text = self.font.render('Плоха', True, (0, 0, 0))
+        self.image.fill((240, 0, 10))
+        self.image.blit(text, (230, 50))
 
 
 def read_skeleton(line):
@@ -375,7 +401,7 @@ def read_skeleton(line):
 def end_game(level_passed):
     global ON_VICTORY_SCREEN
     global IN_GAME
-    EndGameLabel()
+    EndGameLabelWin()
     IN_GAME = False
     ON_VICTORY_SCREEN = True
     cur = con.cursor()
@@ -390,7 +416,14 @@ def end_game(level_passed):
 
 
 def lost():
-    pass
+    global ON_LOST_SCREEN
+    global IN_GAME
+    EndGameLabelLoose()
+    for elem in bad_guys:
+        elem.vel = 0
+    IN_GAME = False
+    ON_LOST_SCREEN = True
+    pygame.time.set_timer(girl_dance, 500)
 
 
 def load_level(level_number):
@@ -439,6 +472,7 @@ def load_level(level_number):
 def main_menu():
     for elem in all_sprites:
         elem.kill()
+    global ON_LOST_SCREEN
     global ON_VICTORY_SCREEN
     global background
     global logo
@@ -446,6 +480,7 @@ def main_menu():
     global btn2
     global btn3
     global btnm
+    ON_LOST_SCREEN = False
     ON_VICTORY_SCREEN = False
     screen.fill((28, 28, 28))
     pygame.mixer.stop()
@@ -475,6 +510,7 @@ if __name__ == '__main__':
     IN_GAME = False
     dance_limit = 0
     ON_VICTORY_SCREEN = False
+    ON_LOST_SCREEN = False
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -510,18 +546,20 @@ if __name__ == '__main__':
                     girl.move(0, -speed)
             if event.type == girl_frame_change and IN_GAME:
                 girl.change_frame()
-            if event.type == skeleton_shoot and IN_GAME and ln > 1:
-                for elem in ask_group:
-                    elem.shoot()
-            if event.type == skeleton_change_frame and IN_GAME and ln > 1:
-                for elem in ask_group:
-                    elem.change_frame()
+            # if event.type == skeleton_shoot and IN_GAME and ln > 1:
+            #     for elem in ask_group:
+            #         elem.shoot()
+            # if event.type == skeleton_change_frame and IN_GAME and ln > 1:
+            #     for elem in ask_group:
+            #         elem.change_frame()
             if event.type == girl_hit and IN_GAME:
                 girl.hit()
             if event.type == girl_dance and ON_VICTORY_SCREEN and dance_limit <= 10:
                 girl.dance()
                 dance_limit += 1
-                print(dance_limit)
+            elif event.type == girl_dance and ON_LOST_SCREEN and dance_limit <= 10:
+                girl.cry()
+                dance_limit += 1
             elif dance_limit > 10:
                 girl.kill()
                 main_menu()
