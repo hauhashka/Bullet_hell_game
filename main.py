@@ -4,6 +4,7 @@ import sqlite3
 import sys
 
 import pygame
+
 """Задание границ экрана и инициализация самого экрана"""
 size = width, height = 1200, 900
 screen = pygame.display.set_mode(size)
@@ -60,6 +61,7 @@ class ButtonLevel1(pygame.sprite.Sprite):
 
 class ButtonLevel2(pygame.sprite.Sprite):
     """Класс для создания кнопки второго уровня на главном экране"""
+
     def __init__(self, *group):
         super().__init__(*group)
         cur = con.cursor()
@@ -83,6 +85,7 @@ class ButtonLevel2(pygame.sprite.Sprite):
 
 class ButtonLevel3(pygame.sprite.Sprite):
     """"Клосс для создания кнопки третьего уровня на главном экране"""
+
     def __init__(self, *group):
         super().__init__(*group)
         cur = con.cursor()
@@ -167,7 +170,7 @@ class Girl(pygame.sprite.Sprite):
                 self.last_hurt = now
                 self.hp -= 1
                 self.image = Girl.girl_hurt
-                if self.hp == 0:
+                if self.hp <= 0:
                     lost()
 
     def shoot(self):
@@ -244,9 +247,11 @@ class BasedSkeleton(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
-            self.rect.x = random.randrange(200, 950)
+            self.rect.x = random.randrange(250, 930)
         self.vel = 1
         bad_guys.add(self)
+        self.death_sound = pygame.mixer.Sound(f"data/skeleton_sound.wav")
+        self.death_sound.set_volume(0.5)
 
     def update(self, *event):
         """Движение скелета и удаление его если был контакт с пулей"""
@@ -256,6 +261,7 @@ class BasedSkeleton(pygame.sprite.Sprite):
             pygame.sprite.spritecollideany(self, bullets_girl).kill()
             self.kill()
             CNT += 10
+            self.death_sound.play(0)
         if self.rect.y > screen.get_height():
             CNT -= 20
             if CNT - 20 < 0:
@@ -276,13 +282,17 @@ class AdvancedSkeleton(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = random.randint(200, 800)
         while pygame.sprite.spritecollide(self, bad_guys, False):
-            self.rect.x = random.randrange(200, 950)
+            self.rect.x = random.randrange(250, 930)
             print(self.rect.x)
         ask_group.add(self)
         bad_guys.add(self)
         self.frame = 0
         self.hp = 2
         self.vel = 1
+        self.death_sound = pygame.mixer.Sound(f"data/skeleton_advanced_sound.wav")
+        self.sound = pygame.mixer.Sound(f"data/skeleton_advanced_sound1.wav")
+        self.death_sound.set_volume(0.5)
+        self.sound.set_volume(0.5)
 
     def update(self, *args):
         """Движение скелета, изменение его при контакте с пулей и удаление его при втором контакте"""
@@ -293,10 +303,11 @@ class AdvancedSkeleton(pygame.sprite.Sprite):
             if self.hp == 0:
                 CNT += 20
                 self.kill()
+                self.death_sound.play(0)
             elif self.hp == 1:
                 self.image = AdvancedSkeleton.sk_image_2
                 pygame.sprite.spritecollideany(self, bullets_girl).kill()
-
+                self.sound.play(0)
         if self.rect.y > screen.get_height():
             CNT -= 20
             if CNT - 20 < 0:
@@ -322,7 +333,7 @@ class MusicButton(pygame.sprite.Sprite):
         self.is_playing = True
 
     def update(self, *args):
-        """Изменение ее, если игрок не хочет ее слушать"""
+        """Изменение ее, если игрок не хочет слушать музыку"""
         if args and args[0].type == pygame.MOUSEBUTTONDOWN and \
                 self.rect.collidepoint(args[0].pos) and self.is_playing:
             pygame.mixer.music.pause()
@@ -337,6 +348,7 @@ class MusicButton(pygame.sprite.Sprite):
 
 class Border(pygame.sprite.Sprite):
     """Границы игровой области"""
+
     def __init__(self, x1):
         """Отрисовка границ"""
         super().__init__(all_sprites)
@@ -348,6 +360,7 @@ class Border(pygame.sprite.Sprite):
 
 class Count(pygame.sprite.Sprite):
     """Счетчик смертей скелетов"""
+
     def __init__(self):
         """Отрисовка счетчика"""
         super().__init__(all_sprites)
@@ -367,6 +380,7 @@ class Count(pygame.sprite.Sprite):
 
 class EndGameLabelWin(pygame.sprite.Sprite):
     """Конечная надпись если игрок победил и прошел уровень до конца"""
+
     def __init__(self):
         """Инициализация надписи"""
         super().__init__(all_sprites)
@@ -383,6 +397,7 @@ class EndGameLabelWin(pygame.sprite.Sprite):
 
 class EndGameLabelLoose(pygame.sprite.Sprite):
     """Надпись если игрок проиграл"""
+
     def __init__(self):
         """Инициализация надписи"""
         super().__init__(all_sprites)
@@ -457,6 +472,12 @@ def load_level(level_number):
     global spawnlane_index
     global ln
     global ask_group
+    global btnm
+
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(f"data/level{level_number}_theme.mp3")
+    pygame.mixer.music.play(1, 0.0, 3000)
+    pygame.mixer.music.set_volume(0.2)
     ln = level_number
     spawnlane_index = 0
     ON_VICTORY_SCREEN = False
@@ -464,7 +485,7 @@ def load_level(level_number):
     for sprite in all_sprites:
         sprite.kill()
     pygame.time.set_timer(SKELETON_SPAWN, 2000)
-    pygame.mixer.music.stop()
+    btnm = MusicButton(all_sprites)
     level_map = []
     girl = Girl(all_sprites)
     borders = pygame.sprite.Group()
@@ -504,13 +525,14 @@ def main_menu():
     screen.fill((28, 28, 28))
     pygame.mixer.stop()
     pygame.mixer.music.load("data/main_menu_theme.mp3")
-    pygame.mixer.music.play(-1, 0.0)
+    pygame.mixer.music.play(-1, 2.0)
     background = Background(all_sprites)
     logo = Logo(all_sprites)
     btn1 = ButtonLevel1(all_sprites)
     btn2 = ButtonLevel2(all_sprites)
     btn3 = ButtonLevel3(all_sprites)
     btnm = MusicButton(all_sprites)
+
 
 """создание главной группы спрайтов и вывод главного меню"""
 all_sprites = pygame.sprite.Group()
